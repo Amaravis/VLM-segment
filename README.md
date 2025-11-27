@@ -50,7 +50,7 @@ git clone https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
 
 ## ▶️ Run
 
-### 1️⃣ LR Data Processing
+### 1️⃣ HR Data Processing
 
 ``` bash
 python data_process/data_converter_fixed_1920_qa.py
@@ -58,7 +58,7 @@ python data_process/data_converter_fixed_1920_qa.py
 
 ------------------------------------------------------------------------
 
-### 2️⃣ LR Training
+### 2️⃣ HR Training
 
 ``` bash
 bash training_scripts/final_hr_training.sh
@@ -66,7 +66,7 @@ bash training_scripts/final_hr_training.sh
 
 ------------------------------------------------------------------------
 
-### 3️⃣ HR Data Processing (Two Methods)
+### 3️⃣ LR Data Processing (Two Methods)
 
 #### **3.1 Paper Method (Search-Based)**
 
@@ -86,7 +86,7 @@ python data_process/data_converter_fixed_512_gt_crop_random_region.py
 
 ------------------------------------------------------------------------
 
-### 4️⃣ HR Training
+### 4️⃣ LR Training
 
 ``` bash
 bash training_scripts/final_lr_training.sh
@@ -94,7 +94,7 @@ bash training_scripts/final_lr_training.sh
 
 ------------------------------------------------------------------------
 
-## 🔄 Model Conversion (HF Format)
+## 🔄 Model Conversion (HuggingFace Format)
 
 ``` bash
 python3 training_scripts/model_merger.py     --local_dir workdir/xxx/global_step_xxx/actor
