@@ -12,6 +12,12 @@ Code for paper "FineRS: Fine-grained Reasoning and Segmentation of Small Objects
 
 ------------------------------------------------------------------------
 
+## 🛠️Framework
+
+![example image](imgs/framework.png)
+
+------------------------------------------------------------------------
+
 ## 📦 Installation
 
 ``` bash
