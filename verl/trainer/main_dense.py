@@ -28,7 +28,7 @@ from omegaconf import OmegaConf
 
 from verl.single_controller.ray import RayWorkerGroup
 from verl.trainer.config import PPOConfig
-from verl.trainer.ray_trainer import RayPPOTrainer, ResourcePoolManager, Role
+from verl.trainer.ray_trainer_dense import RayPPOTrainer, ResourcePoolManager, Role
 from verl.trainer.ray_trainer_with_lr import RayPPOTrainer_with_LR
 from verl.utils import get_processor, get_tokenizer
 from verl.workers.fsdp_workers import FSDPWorker

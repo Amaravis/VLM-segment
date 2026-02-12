@@ -38,7 +38,7 @@ from verl.single_controller.ray import RayClassWithInitArgs, RayResourcePool, Ra
 from verl.single_controller.ray.base import create_colocated_worker_cls
 from verl.trainer import core_algos
 from verl.trainer.config import PPOConfig
-from verl.utils.rl_dataset_refine import RLHFDataset, collate_fn
+from verl.utils.rl_dataset_refine_dense import RLHFDataset, collate_fn
 from verl.utils.torch_functional import masked_mean
 from verl.utils.tracking import Tracking
 from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path, clean_old_ckpts

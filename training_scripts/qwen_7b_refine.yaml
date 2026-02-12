@@ -1,0 +1,120 @@
+data:
+  # HuggingFace dataset name or local path/parquet folder for your *iterative RL* data
+  # e.g. "yourname/finers_iter_rl" or "/path/to/parquet_dir"
+  train_files: yourname/finers_iter_rl
+  val_files: null                # no validation dataset for now
+  prompt_key: problem
+
+  # Max *input* tokens (prompt including image tokens) fed into the model.
+  # With your no-example prompts this can usually stay <= 1024 safely.
+  max_prompt_length: 3155
+
+  # Max *generated* tokens from the model (response).
+  # Your JSON answer is short; 256–512 is plenty.
+  max_response_length: 512
+
+  # How many prompts per RL step (before GRPO's n repeats).
+  rollout_batch_size: 8
+
+  shuffle: true
+  seed: 42
+
+  # Image resolution control (you can keep your old value if you want).
+  # 1920 * 1080 = 2,073,600; set higher if you keep original sizes.
+  max_pixels: 2073600
+  min_pixels: 3136
+
+  # Upper bound on tokens per vLLM batch (used in rollout).
+  # Roughly (max_prompt_length + max_response_length), tune if OOM.
+  max_num_batched_tokens: 3677
+
+  # Kept for backwards-compat; your new RLHFDataset mostly ignores this.
+  unified_qa_model: false
+
+  # Passed directly into RLHFDataset and used as the system message.
+  system_prompt: >
+    You are a vision-language assistant that localizes objects,
+    refines bounding boxes iteratively, selects segmentation points,
+    and answers questions. Always follow the required "think:" then "json:" format.
+
+algorithm:
+  # Which advantage estimator to use.
+  # "grpo" = group relative preference optimization (no critic).
+  adv_estimator: grpo
+
+  # Only used by some KL controllers; with actor.use_kl_loss=true, you mainly use actor.kl_loss_coef.
+  kl_coef: 0.0
+
+worker:
+  actor:
+    # Logical global batch size (before GRPO repeats).
+    # FSDPWorker multiplies this by rollout.n internally.
+    # Here: 8 prompts * 8 samples (n) = 64 sequences per step.
+    global_batch_size: 8
+
+    # Micro-batch per device for the PPO update step (grad accumulation).
+    micro_batch_size_per_device_for_update: 1
+
+    # Micro-batch per device during rollout experience collection
+    # (not very important for GRPO, mostly for PPO+critic).
+    micro_batch_size_per_device_for_experience: 2
+
+    max_grad_norm: 1.0
+
+    # For GRPO we usually *do* use a KL loss to keep close to the ref.
+    use_kl_loss: true
+    kl_loss_coef: 5.0e-3          # per-token KL weight
+    kl_loss_type: low_var_kl      # more stable KL estimator
+
+    model:
+      model_path: Qwen/Qwen2.5-VL-7B-Instruct
+      enable_gradient_checkpointing: true
+
+    optim:
+      lr: 1.0e-6
+      weight_decay: 1.0e-2
+
+    fsdp:
+      param_offload: false        # model params stay on GPU inside FSDP
+      optimizer_offload: false    # optimizer states stay on GPU
+      torch_dtype: null           # use default (bf16/fp16 depending on config)
+
+    # Additional manual offload hooks in FSDPWorker
+    offload:
+      param_offload: true         # move params CPU<->GPU around rollout
+      optimizer_offload: true     # move optimizer states when not used
+
+  rollout:
+    temperature: 1.0
+    tensor_parallel_size: 2       # use both A100s with vLLM TP=2
+    gpu_memory_utilization: 0.5
+    n: 8                          # GRPO: 8 samples per prompt
+    enable_chunked_prefill: true
+
+  ref:
+    offload:
+      param_offload: true         # ref model can sit mostly on CPU
+
+  reward:
+    reward_type: function
+    # This must match the string you route in CustomRewardManager.__init__
+    # e.g. `elif compute_score == "seg_iterative": self.compute_score = seg_iterative_compute_score`
+    compute_score: seg_iterative_qa
+
+trainer:
+  total_episodes: 1               # 1 full pass over the dataloader
+  logger: ["console", "wandb"]
+  project_name: finers_iterative
+  # you can also set `experiment_name:` if PPOConfig supports it
+
+  # Ray / cluster layout
+  n_gpus_per_node: 2              # you said you have 2×A100
+  nnodes: 1
+
+  save_freq: 50                   # checkpoint every 50 steps
+  test_freq: 0                    # no validation loop (no val_files)
+  val_before_train: false
+  val_only: false
+
+  resume_mode: disbale            # (their typo in Fines) "disbale" / "disable" / "resume_path"
+  resume_from_path: ""            # path to a specific global_step_* folder if using resume_path

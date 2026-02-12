@@ -1,0 +1,71 @@
+data:
+  train_files: /scratch/svaidy33/hf_cache/datasets/all_parquet/finers_iterative_rl_1920x1080_1per_transition/
+  prompt_key: problem
+  max_prompt_length: 4000      # smaller for debug
+  max_response_length: 512     # keep short to reduce vLLM memory
+  rollout_batch_size: 2
+  shuffle: true
+  seed: 42
+  max_pixels: 2073600
+  min_pixels: 3136
+  max_num_batched_tokens: 4512
+  unified_qa_model: false
+  system_prompt: >
+    You are a vision-language assistant that localizes objects,
+    refines bounding boxes iteratively, selects segmentation points,
+    and answers questions. Always output think: then json:.
+
+algorithm:
+  adv_estimator: grpo
+  kl_coef: 0.02
+
+worker:
+  actor:
+    global_batch_size: 2
+    micro_batch_size_per_device_for_update: 1
+    micro_batch_size_per_device_for_experience: 1
+    max_grad_norm: 1.0
+    use_kl_loss: false
+    kl_loss_coef: 5.0e-3
+    kl_loss_type: low_var_kl
+    model:
+      model_path: Qwen/Qwen2.5-VL-7B-Instruct
+      enable_gradient_checkpointing: true
+    optim:
+      lr: 5.0e-7
+      weight_decay: 1.0e-2
+    fsdp:
+      param_offload: false
+      optimizer_offload: false
+      torch_dtype: null
+    offload:
+      param_offload: false
+      optimizer_offload: false   # keep if you want to mimic real run, or set false for simpler debug
+
+  rollout:
+    temperature: 1.0
+    tensor_parallel_size: 2      # **key**: single GPU rollout
+    gpu_memory_utilization: 0.25  # conservative
+    n: 8                         # only 2 rollouts per batch
+    enable_chunked_prefill: False
+
+  ref:
+    offload:
+      param_offload: true
+
+  reward:
+    reward_type: function
+    compute_score: seg_iterative_qa
+
+trainer:
+  total_episodes: 1          # just 1–2 episodes to see if it runs
+  logger: ["console"]        # disable wandb for the smoke test
+  project_name: finers_iterative_class2
+  n_gpus_per_node: 2         # **single GPU**
+  nnodes: 1
+  save_freq: 160            # effectively “never” for such a short run
+  test_freq: 0
+  val_before_train: false
+  val_only: false
+  resume_mode: auto
+  save_checkpoint_path: ./ckpts/finers_iterative_class2

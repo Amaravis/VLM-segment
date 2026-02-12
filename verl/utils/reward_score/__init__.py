@@ -16,6 +16,7 @@
 from .math import math_compute_score
 from .r1v import r1v_compute_score
 from .seg import seg_compute_score
+from .refine_seg import seg_iterative_compute_score
 
 # lr
 from .seg_restrict_qa import seg_strict_compute_score_qa
@@ -23,5 +24,8 @@ from .seg_restrict_qa import seg_strict_compute_score_qa
 # hr
 from .seg_restrict8_regions_and_qa import seg_strict_compute_score8_region_qa
 
+from .refine_seg_dense import seg_iterative_compute_score_dense
+
 __all__ = ["math_compute_score", "r1v_compute_score", "seg_compute_score", 
-           "seg_strict_compute_score_qa", "seg_strict_compute_score8_region_qa"]
+           "seg_strict_compute_score_qa", "seg_strict_compute_score8_region_qa","seg_iterative_compute_score",
+           "seg_iterative_compute_score_dense"]
